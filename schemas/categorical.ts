@@ -16,7 +16,7 @@ export const categoricalQuestionSchema = questionCoreSchema
 				label: z
 					.string()
 					.describe(
-						"The text displayed for this option. May include HTML tags for formatting.",
+						"The text displayed for this option. May include HTML tags for formatting. Must use `\n` for line breaks.",
 					),
 				openTextbox: z
 					.object({
@@ -25,7 +25,7 @@ export const categoricalQuestionSchema = questionCoreSchema
 							.describe(
 								"Unique identifier of the open textbox linked to this option. Must follow the pattern `oN`, where N matches the numeric index of the option (e.g., if option name is `_1`, textbox name must be `o1`).",
 							),
-						datatype: z
+						dataType: z
 							.enum(["text", "long-text", "number"])
 							.describe(
 								"Specifies the expected input type for the open textbox. 'number' for numeric input, 'text' for short text, 'long-text' for multi-line text.",
@@ -81,5 +81,3 @@ export const categoricalQuestionSchema = questionCoreSchema
 	.describe(
 		"A categorical question where respondents choose one or more options from a predefined list (Single Choice or Multiple Choice).",
 	);
-
-// 

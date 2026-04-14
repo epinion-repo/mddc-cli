@@ -8,16 +8,10 @@ export const categoricalTemplate: Templates["categorical"] = ({
 	isRandom,
 }) => {
 	const optionsString = options
-		.map((option) => {
-			const { name, label, openTextbox, isExclusive } = option;
-			return `\t${name} "${label}" ${openTextbox ? `other(${openTextbox.name} "" ${openTextbox.datatype === "number" ? "long" : "text"} [${openTextbox.min}..${openTextbox.max}])` : ""}${isExclusive ? "exclusive" : ""}`;
-		})
+		.map(
+			(option) => `\t${option.name} "${option.label}"${option.openTextbox ? ` other(${option.openTextbox.name} "" ${option.openTextbox.dataType === "number" ? "long" : "text"} [${option.openTextbox.min}..${option.openTextbox.max}] )` : ""}${option.isExclusive ? " exclusive" : ""}`,
+		)
 		.join(",\n");
 
-	return `${name} "${label}" 
-categorical [1..${!isMultiple ? "1" : ""}]
-{
-${optionsString}
-}${isRandom ? " ran" : ""};`;
+	return `${name} "${label}"\ncategorical [1..${!isMultiple ? "1" : ""}]\n{\n${optionsString}\n}${isRandom ? " ran" : ""};`;
 };
-

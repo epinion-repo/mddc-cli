@@ -1,46 +1,35 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { questionSchema } from "./schemas/index";
 import { templates } from "./templates/templates";
 
-// ── Functions ────────────────────────────────────────────────────────────
+// ── Commands ────────────────────────────────────────────────────────────
 
 /**
  * Generate the JSON schema file from the Zod question schema.
- * @param outputPath The path where the schema will be saved.
+ * Usage: mddc schema
  */
-export const generateSchema = (outputPath: string) => {
+const generateSchema = () => {
 	const output = JSON.stringify(
 		zodTextFormat(questionSchema, "questionsSchema"),
 	);
+	const outputPath = resolve(__dirname, "mddc-schema.json");
 
-	let finalPath = outputPath;
-	if (existsSync(finalPath) && statSync(finalPath).isDirectory()) {
-		finalPath = resolve(finalPath, "mddc-schema.json");
-	}
-
-	writeFileSync(finalPath, output, "utf-8");
-	console.log(`✅ Schema written to ${finalPath}`);
+	writeFileSync(outputPath, output, "utf-8");
+	console.log(`✅ Schema written to ${outputPath}`);
 };
 
 /**
  * Convert a .mddc JSON file to .mdd format.
- * @param inputPath The path to the input .mddc file.
- * @param outputPath The path to the output .mdd file.
+ * Usage: mddc parse <input.mddc> <output.mdd>
  */
-export const toMdd = (inputPath: string, outputPath: string) => {
+const toMdd = (inputPath: string, outputPath: string) => {
 	if (!existsSync(inputPath)) {
 		console.error(`❌ Error: Input file ${inputPath} does not exist.`);
 		process.exit(1);
 	}
-
-	let finalPath = outputPath;
-	if (existsSync(finalPath) && statSync(finalPath).isDirectory()) {
-		finalPath = resolve(finalPath, `${basename(inputPath, ".mddc")}.mdd`);
-	}
-
 	const mddc = readFileSync(inputPath, "utf-8");
 	const mddToolOutputSchema = z.array(questionSchema);
 	if (!mddToolOutputSchema.safeParse(JSON.parse(mddc)).success) {
@@ -49,11 +38,59 @@ export const toMdd = (inputPath: string, outputPath: string) => {
 	}
 	const questions = mddToolOutputSchema.parse(JSON.parse(mddc));
 	const mdd = questions
-		.map((question) => {
-			// Cast type to 'never' as per original code templates generic handling
-			return templates[question.type](question as never);
-		})
+		.map((question) => templates[question.type](question as never))
 		.join("\n\n");
-	writeFileSync(finalPath, mdd, "utf-8");
-	console.log(`✅ MDD written to ${finalPath}`);
+	writeFileSync(outputPath, mdd, "utf-8");
+	console.log(`✅ MDD written to ${outputPath}`);
 };
+
+// ── CLI Entry Point ─────────────────────────────────────────────────────
+
+const USAGE = `
+Usage:
+  mddc schema                          Generate mddc-schema.json
+  mddc parse <input.mddc> <output.mdd>  Convert MDDC to MDD
+
+  (or: npx tsx index.ts <command> ...)
+`.trim();
+
+const main = () => {
+	const args = process.argv.slice(2);
+	const command = args[0];
+
+	switch (command) {
+		case "schema":
+			generateSchema();
+			break;
+
+		case "parse": {
+			const input = args[1];
+			const output = args[2];
+
+			if (!input || !output) {
+				console.error("❌ Error: Missing arguments for 'parse' command.");
+				console.error("   Usage: mddc parse <input.mddc> <output.mdd>");
+				process.exit(1);
+			}
+
+			const inputPath = resolve(process.cwd(), input);
+			const outputPath = resolve(process.cwd(), output);
+
+			toMdd(inputPath, outputPath);
+			break;
+		}
+
+		default:
+			console.error(
+				command
+					? `❌ Unknown command: "${command}"`
+					: "❌ No command provided.",
+			);
+			console.error(USAGE);
+			process.exit(1);
+	}
+};
+
+main();
+
+export { main };
