@@ -1,13 +1,15 @@
 {
 	"name": "@epinion-repo/mddc-cli",
-	"version": "1.0.2",
+	"version": "1.0.3-beta.1",
 	"description": "CLI to convert MDDC JSON to MDD format",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"bin": {
 		"mddc": "./dist/bin/mddc.js"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com"
 	},
@@ -18,18 +20,23 @@
 	"scripts": {
 		"build": "tsc",
 		"prepublishOnly": "npm run build",
-		"dev": "tsx index.ts",
+		"dev": "tsx bin/mddc.ts",
 		"link:global": "npm run build && npm link"
 	},
-	"keywords": ["mddc", "mdd", "cli"],
+	"keywords": [
+		"mddc",
+		"mdd",
+		"cli"
+	],
 	"author": "",
 	"license": "ISC",
 	"engines": {
 		"node": ">=18"
 	},
 	"dependencies": {
+		"commander": "^14.0.3",
 		"openai": "^6.29.0",
-		"zod": "^4.3.6"
+		"zod": "^3.25.76"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",

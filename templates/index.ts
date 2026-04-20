@@ -1,4 +1,4 @@
-export * from "./categorical";
-export * from "./info";
+export * from "./categorical-template";
+export * from "./info-template";
+export * from "./open-textbox-template";
 export * from "./templates";
-export * from "./textbox";

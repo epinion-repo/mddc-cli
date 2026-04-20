@@ -1,42 +1,41 @@
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { Command } from "commander";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import { questionSchema } from "./schemas/index";
-import { templates } from "./templates/templates";
+import pkg from "./package.json";
+import { questionSchema } from "./schemas";
+import { templates } from "./templates";
+import type { Question } from "./types";
 
 // ── Commands ────────────────────────────────────────────────────────────
 
-/**
- * Generate the JSON schema file from the Zod question schema.
- * Usage: mddc schema
- */
 const generateSchema = () => {
 	const output = JSON.stringify(
-		zodTextFormat(questionSchema, "questionsSchema"),
+		zodTextFormat(questionSchema as never, "questionsSchema"),
 	);
 	const outputPath = resolve(__dirname, "mddc-schema.json");
-
 	writeFileSync(outputPath, output, "utf-8");
 	console.log(`✅ Schema written to ${outputPath}`);
 };
 
-/**
- * Convert a .mddc JSON file to .mdd format.
- * Usage: mddc parse <input.mddc> <output.mdd>
- */
 const toMdd = (inputPath: string, outputPath: string) => {
 	if (!existsSync(inputPath)) {
-		console.error(`❌ Error: Input file ${inputPath} does not exist.`);
+		console.error(`❌ Input file not found: ${inputPath}`);
 		process.exit(1);
 	}
 	const mddc = readFileSync(inputPath, "utf-8");
 	const mddToolOutputSchema = z.array(questionSchema);
-	if (!mddToolOutputSchema.safeParse(JSON.parse(mddc)).success) {
-		console.error("❌ Error: Invalid MDDC format.");
+
+	let questions: Question[];
+	try {
+		questions = mddToolOutputSchema.parse(JSON.parse(mddc));
+	} catch (error) {
+		console.error(`❌ Invalid MDDC format: ${error}`);
 		process.exit(1);
 	}
-	const questions = mddToolOutputSchema.parse(JSON.parse(mddc));
+
 	const mdd = questions
 		.map((question) => templates[question.type](question as never))
 		.join("\n\n");
@@ -44,53 +43,35 @@ const toMdd = (inputPath: string, outputPath: string) => {
 	console.log(`✅ MDD written to ${outputPath}`);
 };
 
-// ── CLI Entry Point ─────────────────────────────────────────────────────
+// ── CLI ─────────────────────────────────────────────────────────────────
 
-const USAGE = `
-Usage:
-  mddc schema                          Generate mddc-schema.json
-  mddc parse <input.mddc> <output.mdd>  Convert MDDC to MDD
+const program = new Command();
 
-  (or: npx tsx index.ts <command> ...)
-`.trim();
+program
+	.name("mddc")
+	.description("Convert MDDC JSON to MDD format")
+	.version(pkg.version, "-v, --version", "Show current version");
 
-const main = () => {
-	const args = process.argv.slice(2);
-	const command = args[0];
+program
+	.command("schema")
+	.description("Generate mddc-schema.json in the current directory")
+	.action(generateSchema);
 
-	switch (command) {
-		case "schema":
-			generateSchema();
-			break;
+program
+	.command("parse")
+	.description("Convert a .mddc file to .mdd")
+	.argument("<input>", "Path to the source .mddc (JSON) file")
+	.argument("<output>", "Path for the output .mdd file")
+	.action((input: string, output: string) => {
+		toMdd(resolve(process.cwd(), input), resolve(process.cwd(), output));
+	});
 
-		case "parse": {
-			const input = args[1];
-			const output = args[2];
+program
+	.command("update")
+	.description("Upgrade mddc-cli to the latest version")
+	.action(() => {
+		console.log("Updating mddc-cli...");
+		execSync("npm update -g @epinion-repo/mddc-cli", { stdio: "inherit" });
+	});
 
-			if (!input || !output) {
-				console.error("❌ Error: Missing arguments for 'parse' command.");
-				console.error("   Usage: mddc parse <input.mddc> <output.mdd>");
-				process.exit(1);
-			}
-
-			const inputPath = resolve(process.cwd(), input);
-			const outputPath = resolve(process.cwd(), output);
-
-			toMdd(inputPath, outputPath);
-			break;
-		}
-
-		default:
-			console.error(
-				command
-					? `❌ Unknown command: "${command}"`
-					: "❌ No command provided.",
-			);
-			console.error(USAGE);
-			process.exit(1);
-	}
-};
-
-main();
-
-export { main };
+export const main = () => program.parse();

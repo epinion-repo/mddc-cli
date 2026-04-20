@@ -1,11 +1,9 @@
 import z from "zod";
-import { questionCoreSchema } from "./core";
+import { baseQuestionSchema } from "./base-question";
 
-export const openTextboxQuestionSchema = questionCoreSchema
+export const openTextboxQuestionSchema = baseQuestionSchema
 	.extend({
-		type: z
-			.literal("openTextbox")
-			.describe("Identifies this as an open-ended textbox question."),
+		type: z.literal("openTextbox"),
 
 		dataType: z
 			.enum(["text", "long-text", "number"])
@@ -25,6 +23,11 @@ export const openTextboxQuestionSchema = questionCoreSchema
 			.nullable()
 			.describe(
 				"Maximum allowed numeric value (for `number`) or maximum character length (for `text` and `long-text`). Defaults: `500` for `text`, `4000` for `long-text`, `null` (no limit) for `number`.",
+			),
+		isOptional: z
+			.boolean()
+			.describe(
+				"Set to `true` if the respondent can skip this question without answering; `false` if an answer is required.",
 			),
 	})
 	.describe(
