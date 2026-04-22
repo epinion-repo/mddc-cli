@@ -1,4 +1,39 @@
-import type { Templates } from "../types";
+import type { Question, Templates } from "../types";
+
+type CategoricalOption = Extract<Question, { type: "categorical" }>["options"][number];
+
+function openTextboxSuffix(
+	openTextbox: NonNullable<CategoricalOption["openTextbox"]>,
+): string {
+	const { name: otName, dataType, min, max } = openTextbox;
+	const range =
+		min != null && max != null
+			? `[${min}..${max}]`
+			: max != null
+				? `[..${max}]`
+				: min != null
+					? `[${min}..]`
+					: null;
+
+	switch (dataType) {
+		case "singleline-text": {
+			const r = range ?? "[1..500]";
+			return ` other(${otName} "" text ${r})`;
+		}
+		case "multiline-text": {
+			const r = range ?? "[1..4000]";
+			return ` other(${otName} "" style(control(type="MultiLineEdit")) text ${r})`;
+		}
+		case "long": {
+			const r = range ?? (min != null ? `[${min}..]` : "[0..]");
+			return ` other(${otName} "" long ${r})`;
+		}
+		case "double":
+			return ` other(${otName} "" double)`;
+		default:
+			return "";
+	}
+}
 
 export const categoricalTemplate: Templates["categorical"] = ({
 	name,
@@ -7,23 +42,15 @@ export const categoricalTemplate: Templates["categorical"] = ({
 	isMultiple,
 	isRandom,
 }) => {
+	const range = isMultiple ? "" : "1";
 	const optionsString = options
-		.map(({ name, label, openTextbox, isExclusive, isFixed }) => {
-			let openTextboxString = null;
-			if (openTextbox) {
-				const openTextboxDataTypeString = 
-				openTextboxString = !openTextbox ? "" : `other(${openTextbox.name} "" `;
-			}
-
-			const dataTypeMap = {
-				"single-line-text": `text[0..500]`,
-				"multi-line-text": `style(control(type="MultiLineEdit")) text[0..4000]`,
-				long: `long[${option.openTextbox.min}..${option.openTextbox.max}]`,
-				double: "double",
-			};
-			return `\t${name} "${label}"${openTextbox ? ` other(${option.openTextbox.name} "" ${option.openTextbox.dataType === "" ? "long" : "text"} [${option.openTextbox.min}..${option.openTextbox.max}] )` : ""}${option.isExclusive ? " exclusive" : ""}`;
+		.map(({ name: optName, label: optLabel, openTextbox, isExclusive, isFixed }) => {
+			const ot = openTextbox ? openTextboxSuffix(openTextbox) : "";
+			const exclusive = isExclusive ? " exclusive" : "";
+			const fix = isRandom && isFixed ? " fix" : "";
+			return `    ${optName} "${optLabel}"${ot}${exclusive}${fix}`;
 		})
 		.join(",\n");
 
-	return `${name} "${label}"\ncategorical [1..${isMultiple ? "" : "1"}]\n{\n${optionsString}\n}${isRandom ? " ran" : ""};`;
+	return `${name} "${label}"\ncategorical [1..${range}]\n{\n${optionsString}\n}${isRandom ? " ran" : ""};`;
 };

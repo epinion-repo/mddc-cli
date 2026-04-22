@@ -15,7 +15,7 @@ export const loopTemplate: Templates["loop"] = ({
 	const optionsString = options
 		.map(
 			(option) =>
-				`\t\t${option.name} "${option.label}"${option.openTextbox ? ` other(${option.openTextbox.name} "" ${option.openTextbox.dataType === "long-text" ? 'style(control(type="MultiLineEdit"))' : ""}${option.openTextbox.dataType === "number" ? " long" : " text"} [${option.openTextbox.min}..${option.openTextbox.max}] )` : ""}${option.isExclusive ? " exclusive" : ""}`,
+				`\t\t${option.name} "${option.label}"${option.openTextbox ? ` other(${option.openTextbox.name} "" ${option.openTextbox.dataType === "multiline-text" ? 'style(control(type="MultiLineEdit")) ' : ""}${option.openTextbox.dataType === "long" ? "long" : "text"} [${option.openTextbox.min}..${option.openTextbox.max}] )` : ""}${option.isExclusive ? " exclusive" : ""}`,
 		)
 		.join(",\n");
 

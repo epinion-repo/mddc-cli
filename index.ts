@@ -15,7 +15,7 @@ const generateSchema = () => {
 	const output = JSON.stringify(
 		zodTextFormat(questionSchema as never, "questionsSchema"),
 	);
-	const outputPath = resolve(__dirname, "mddc-schema.json");
+	const outputPath = resolve(process.cwd(), "mddc-schema.json");
 	writeFileSync(outputPath, output, "utf-8");
 	console.log(`✅ Schema written to ${outputPath}`);
 };

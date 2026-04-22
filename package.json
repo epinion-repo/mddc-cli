@@ -1,6 +1,6 @@
 {
 	"name": "@epinion-repo/mddc-cli",
-	"version": "1.0.3-beta.1",
+	"version": "1.0.3-beta.2",
 	"description": "CLI to convert MDDC JSON to MDD format",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
